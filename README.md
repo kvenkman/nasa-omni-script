@@ -1,0 +1,1 @@
+The python scripts provided here downloads OMNI data from the NASA ftp website (ftp://cdaweb.gsfc.nasa.gov/pub/data/omni/), compiles the data for all the years, and provides a single netCDF file as output.
