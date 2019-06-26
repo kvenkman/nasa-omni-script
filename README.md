@@ -17,3 +17,5 @@ From the OMNI documentation:
 	combination of Minimum Variance and Cross Product techniques.  
 	The latter also consists of 1998-2000 ACE data shifted to Wind 
 	by each of four techniques.  "
+	
+download_omni_data(year_start = "", year_end = "", resolution = "high", output_filename="")
