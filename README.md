@@ -19,9 +19,8 @@ From the OMNI documentation:
 	by each of four techniques.  "
 	
 ### Dependencies:
-wget
 
-Get it by pip installing from the terminal:
+This code depends on the `wget` Python library to work properly. Pip install it from the terminal if it is missing: 
 
 ```
 > pip install wget
