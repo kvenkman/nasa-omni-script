@@ -18,6 +18,14 @@ From the OMNI documentation:
 	The latter also consists of 1998-2000 ACE data shifted to Wind 
 	by each of four techniques.  "
 	
+### Dependencies:
+	wget
+	
+	Install by pip installing from the terminal:
+	```
+	> pip install wget
+	```
+
 ### Function call: 
 
 download_omni_data(year_start = "", year_end = "", resolution = "high", output_filename="")
