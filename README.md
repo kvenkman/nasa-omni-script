@@ -21,7 +21,8 @@ From the OMNI documentation:
 ### Dependencies:
 	wget
 	
-	Install by pip installing from the terminal:
+	Get it by pip installing from the terminal:
+
 	```
 	> pip install wget
 	```
