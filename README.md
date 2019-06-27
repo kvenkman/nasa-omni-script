@@ -19,13 +19,13 @@ From the OMNI documentation:
 	by each of four techniques.  "
 	
 ### Dependencies:
-	wget
-	
-	Get it by pip installing from the terminal:
+wget
 
-	```
-	> pip install wget
-	```
+Get it by pip installing from the terminal:
+
+```
+> pip install wget
+```
 
 ### Function call: 
 
