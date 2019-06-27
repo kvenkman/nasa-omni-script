@@ -28,7 +28,7 @@ This code depends on the `wget` and `netCDF4` python libraries to work properly.
 ```
 
 ### Function call:
-
-download_omni_data(year_start = "", year_end = "", resolution = "high", output_filename="")
-
-Editing to test a pull
+```
+> import gof
+> gof.generateOmniFile(startYear = 1995, endYear = 2005, resolution = "high", outputFile= "myOutputFile.nc")
+```
