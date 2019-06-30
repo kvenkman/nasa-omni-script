@@ -19,13 +19,13 @@ The above call will generate a netCDF file named ```myOutputFile.nc``` containin
 ### Default parameters:
 The function definition provides default values that are used when the function is called with one or more parameters missing:
 ```
-generateOmniFile(startYear=1963, endYear=datetime.datetime.now().year, resolution='low', hroRes = '5', outputFile='defaultOutput')
+generateOmniFile(startYear=1963, endYear=datetime.datetime.now().year, resolution='low', hroRes = '5', modFlag=False, outputFile='defaultOutput', cleanUp=True)
 ```
 Therefore, the call
 ```
 gof.generateOmniFile()
 ```
-will produce a file named ```'OMNI_1963_<currentYear>_low_resolution.nc'``` containing low resolution OMNI data from 1963 to the current year. The ```hroRes``` keyword is ignored when the ```resolution``` keyword is set to ```low```.
+will produce a file named ```'OMNI_1963_<currentYear>_low_resolution.nc'``` containing low resolution OMNI data from 1963 to the current year. The ```hroRes``` keyword is ignored when the ```resolution``` keyword is set to ```low```. The ```cleanUp``` keyword may be set to ```False``` if the user wishes to retain the ```.dat``` files downloaded by the script. These will be stored in the ```~tmp``` folder.
 
 ### OMNI documentation:
 
