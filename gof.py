@@ -1,8 +1,11 @@
 import wget
-import netCDF4
+from netCDF4 import Dataset
 import datetime
 import os
+import numpy as np
+import glob
 
+# Main function
 def generateOmniFile(startYear=1963, endYear=datetime.datetime.now().year, resolution='low', hroRes = '5', modFlag=False, outputFile='defaultOutput', writeOutput=True, cleanUp=True):
     # Sanitizing the inputs a bit
     if(startYear>endYear):
@@ -42,11 +45,17 @@ def generateOmniFile(startYear=1963, endYear=datetime.datetime.now().year, resol
         fileSuffix = '.asc'
         hroRes = '_5min' if(hroRes == '5') else '_1min'
 
+    # Because when the code breaks, it does not return to the root directory
+    os.chdir(os.path.dirname(os.path.abspath(__file__)))
+
     # Create temporary directory and chdir into it, to download files
     if(not os.path.isdir('~tmp')):
         os.system('mkdir ~tmp')
 
     os.chdir('~tmp')
+    oldFiles = glob.glob('*.dat')
+    if(len(oldFiles) != 0):
+        os.system('rm *.dat') # Wipe clean in case there are previously existing files there
 
     # Setting output filename
     if(outputFile == 'defaultOutput'):
@@ -66,15 +75,13 @@ def generateOmniFile(startYear=1963, endYear=datetime.datetime.now().year, resol
 
         if(resolution == 'low'):
             if(modFlag == True):
-                lowResModOMNI(filename=outputFile)
+                file_description = ""
+                lowResModOMNI(outputFile)
             else:
-                lowResOMNI(filename=outputFile)
+                lowResOMNI(outputFile)
         else:
-            highResOMNI(filename=outputFile)
+            highResOMNI(outputFile)
 
-        #ncfile = netCDF4.Dataset(outputFile, mode='w', format='NETCDF4_CLASSIC')
-        f = open(outputFile, 'w')
-        f.close()
 
         print("Processing complete")
 
@@ -91,8 +98,102 @@ def generateOmniFile(startYear=1963, endYear=datetime.datetime.now().year, resol
     else:
         print("Success!")
 
-def lowResModOMNI(filename=outputFile):
+##
+## End of main function
+##
 
-def lowResOMNI(filename=outputFile):
+# Functions to help process the downloaded OMNI dataset
 
-def highResOMNI(filename=outputFile):
+# Function to process low resolution OMNI data
+def lowResOMNI(outputFile):
+    print("Processing low resolution OMNI files .. \n ")
+
+    # Open a new netCDF file
+    fileid = Dataset(outputFile, 'w', format='NETCDF4')
+
+    # Create variable dimensions
+    # The only dimension here will be time, and it will be unlimited in length
+    time = fileid.createDimension('time', None)
+
+    # fileid.createVariable('name', format, (dimensions))
+    #altitudes = fileid.createVariable('altitude', np.float32, ('index',))
+    year = fileid.createVariable('year', "u4", ('time', ))
+    day = fileid.createVariable('day', 'u4', ('time', ))
+    hour = fileid.createVariable('hour', 'u4', ('time', ))
+    brn = fileid.createVariable('brn', 'u8', ('time', ))
+    imf_sc_id = fileid.createVariable('imf_sc_id', 'u4', ('time', ))
+
+    swplasma_sc_id = fileid.createVariable('swplasma_sc_id', 'u4', ('time', ))
+    npts_imf_avg = fileid.createVariable('npts_imf_avg', 'u8', ('time', ))
+    npts_plasma_avg = fileid.createVariable('npts_plasma_avg', 'u8', ('time', ))
+    avg_B = fileid.createVariable('avg_B', 'f8', ('time', ))
+    avg_B_vec = fileid.createVariable('avg_B_vec', 'f8', ('time', ))
+
+    lat_avg_B_vec = fileid.createVariable('lat_avg_B_vec', 'f8', ('time', ))
+    lon_avg_B_vec = fileid.createVariable('lon_avg_B_vec', 'f8', ('time', ))
+    bx = fileid.createVariable('bx', 'f8', ('time', ))
+    by_gse = fileid.createVariable('by_gse', 'f8', ('time', ))
+    bz_gse = fileid.createVariable('bz_gse', 'f8', ('time', ))
+
+    by_gsm = fileid.createVariable('by_gsm', 'f8',('time', ))
+    bz_gsm = fileid.createVariable('bz_gsm', 'f8',('time', ))
+    sigma_mag_b = fileid.createVariable('sigma_mag_b', 'f8',('time', ))
+    sigma_b = fileid.createVariable('sigma_b', 'f8',('time', ))
+    sigma_bx = fileid.createVariable('sigma_bx', 'f8',('time', ))
+
+    sigma_by = fileid.createVariable('sigma_by', 'f8',('time', ))
+    sigma_bz = fileid.createVariable('sigma_bz', 'f8',('time', ))
+    proton_temp = fileid.createVariable('proton_temp', 'f8',('time', ))
+    proton_den = fileid.createVariable('proton_den', 'f8',('time', ))
+    plasma_speed = fileid.createVariable('plasma_speed', 'f8',('time', ))
+
+    flow_lon_angle = fileid.createVariable('flow_lon_angle', 'f8',('time', ))
+    flow_lat_angle = fileid.createVariable('flow_lat_angle', 'f8',('time', ))
+    ap_ratio = fileid.createVariable('ap_ratio', 'f8',('time', ))
+    flow_prsr = fileid.createVariable('flow_prsr', 'f8',('time', ))
+    sigma_t = fileid.createVariable('sigma_t', 'f8',('time', ))
+
+    sigma_n = fileid.createVariable('sigma_n', 'f8',('time', ))
+    sigma_v = fileid.createVariable('sigma_v', 'f8',('time', ))
+    sigma_phi_v = fileid.createVariable('sigma_phi_v', 'f8',('time', ))
+    sigma_theta_v = fileid.createVariable('sigma_theta_v', 'f8',('time', ))
+    sigma_ap = fileid.createVariable('sigma_ap', 'f8',('time', ))
+
+    efield = fileid.createVariable('efield', 'f8',('time', ))
+    plasma_beta = fileid.createVariable('plasma_beta', 'f8',('time', ))
+    alfven_mach = fileid.createVariable('alfven_mach', 'f8',('time', ))
+    kp = fileid.createVariable('kp', 'u4', ('time', ))
+    ssn = fileid.createVariable('ssn', 'u4', ('time', ))
+
+    dst = fileid.createVariable('dst', 'u8', ('time', ))
+    ae = fileid.createVariable('ae', 'u8', ('time', ))
+    pflux1 = fileid.createVariable('pflux1', 'f8', ('time', ))
+    pflux2 = fileid.createVariable('pflux2', 'f8',('time', ))
+    pflux3 = fileid.createVariable('pflux3', 'f8',('time', ))
+
+    pflux4 = fileid.createVariable('pflux4', 'f8',('time', ))
+    pflux5 = fileid.createVariable('pflux5', 'f8',('time', ))
+    pflux6 = fileid.createVariable('pflux6', 'f8',('time', ))
+    flag = fileid.createVariable('flag', 'u4', ('time', ))
+    ap = fileid.createVariable('ap', 'u4', ('time', ))
+
+    f107 = fileid.createVariable('f107', 'f4',('time', ))
+    pcn_index = fileid.createVariable('pcn_index', 'f8', ('time', ))
+    al_index = fileid.createVariable('al_index', 'u8', ('time', ))
+    au_index = fileid.createVariable('au_index', 'u8', ('time', ))
+    ms_mach = fileid.createVariable('ms_mach', 'f8', ('time', ))
+
+    files = glob.glob('*')
+    print(files)
+
+    fileid.close()
+
+
+# Function to process low resolution OMNI data
+def lowResModOMNI(outputFile):
+    print("Processing low resolution modified OMNI files .. \n")
+    fileid = Dataset(outputFile, 'w', format='NETCDF3_CLASSIC')
+
+def highResOMNI(outputFile):
+    print("Processing high resolution OMNI files .. \n")
+    fileid = Dataset(outputFile, 'w', format='NETCDF3_CLASSIC')
