@@ -3,7 +3,7 @@ import netCDF4
 import datetime
 import os
 
-def generateOmniFile(startYear=1963, endYear=datetime.datetime.now().year, resolution='low', hroRes = '5', modFlag=False, outputFile='defaultOutput', cleanUp=True):
+def generateOmniFile(startYear=1963, endYear=datetime.datetime.now().year, resolution='low', hroRes = '5', modFlag=False, outputFile='defaultOutput', writeOutput=True, cleanUp=True):
     # Sanitizing the inputs a bit
     if(startYear>endYear):
         startYear, endYear = endYear, startYear
@@ -18,11 +18,14 @@ def generateOmniFile(startYear=1963, endYear=datetime.datetime.now().year, resol
         print("resolution keyword has to be set to low/high. setting to low.")
         resolution = "low"
     if((resolution == 'high') and ((hroRes != '5') and (hroRes != '1'))):
-        print("For high resolution OMNI data, hroRes keyword has to be either 1 or 5. Setting to 5.")
+        print("For high resolution OMNI data, hroRes keyword has to be either 1 or 5 minutes. Setting to 5 minutes.")
         hroRes = 5
     if((resolution == 'low') and ((modFlag != True) and (modFlag != False))):
         print("For low resolution OMNI data, modFlag keyword has to be either True or False. Setting to False.")
         modFlag = False
+    if((writeOutput != True) and (writeOutput != False)):
+        print("writeOutput must be either True/False. Setting to True")
+        writeOutput = True
 
     # Done squaring away the inputs. Lets get started.
     serverAddress='ftp://cdaweb.gsfc.nasa.gov/'
@@ -57,20 +60,39 @@ def generateOmniFile(startYear=1963, endYear=datetime.datetime.now().year, resol
         file = wget.download(serverAddress+omniDataPath+tmpFilename, out=tmpFilename)
     print("\nDownload complete")
 
-    # Process the files
-    print("Beginning processing of data")
+    if(writeOutput):
+        # Process the files
+        print("Beginning processing of data")
 
-    #ncfile = netCDF4.Dataset(outputFile, mode='w', format='NETCDF4_CLASSIC')
-    f = open(outputFile, 'w')
-    f.close()
+        if(resolution == 'low'):
+            if(modFlag == True):
+                lowResModOMNI(filename=outputFile)
+            else:
+                lowResOMNI(filename=outputFile)
+        else:
+            highResOMNI(filename=outputFile)
 
-    print("Processing complete")
+        #ncfile = netCDF4.Dataset(outputFile, mode='w', format='NETCDF4_CLASSIC')
+        f = open(outputFile, 'w')
+        f.close()
+
+        print("Processing complete")
+
+        os.chdir('..')
+        os.system('mv ~tmp/'+outputFile+' .')
 
     # Clean up
-    print("Cleaning up")
-    os.chdir('..')
-    os.system('mv ~tmp/'+outputFile+' .')
     if(cleanUp):
+        print("Cleaning up")
         os.system('rm -rf ~tmp')
 
-    print("Clean up complete. Output filename: "+outputFile+"\n")
+    if(writeOutput):
+        print("Success! Output filename: "+outputFile+"\n")
+    else:
+        print("Success!")
+
+def lowResModOMNI(filename=outputFile):
+
+def lowResOMNI(filename=outputFile):
+
+def highResOMNI(filename=outputFile):

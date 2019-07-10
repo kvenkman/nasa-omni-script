@@ -20,7 +20,7 @@ The above call will generate a netCDF file named ```myOutputFile.nc``` containin
 The function definition provides default values that are used when the function is called with one or more parameters missing:
 ```
 generateOmniFile(startYear=1963, endYear=datetime.datetime.now().year, resolution='low', hroRes = '5',
-modFlag=False, outputFile='defaultOutput', cleanUp=True)
+modFlag=False, outputFile='defaultOutput', writeOutput=True, cleanUp=True)
 ```
 Therefore, the call
 ```
@@ -28,7 +28,10 @@ gof.generateOmniFile()
 ```
 will produce a file named ```'OMNI_1963_<currentYear>_low_resolution.nc'``` containing unmodified low resolution OMNI data from 1963 to the current year. The ```modFlag``` keyword allows the user to switch between the original and derived low resolution OMNI data products. This keyword is ignored when the ```resolution``` keyword is set to ```high```. Similarly, the ```hroRes``` allows users to switch between 1 and 5 minute high resolution OMNI data, and the keyword is ignored when the ```resolution``` is set to ```low```. More information regarding the low and high resolution OMNI data and their sub-flavours can be found in the appropriate READMEs available in this repository.
 
-Lastly, the ```cleanUp``` keyword may be set to ```False``` if the user wishes to retain the raw data files downloaded by the script. These will be stored in the ```./~tmp``` folder.
+The ```cleanUp``` keyword may be set to ```False``` if the user wishes to retain the raw data files downloaded by the script. These will be stored in the ```./~tmp``` folder.
+
+The ```writeOutput``` keyword was added for users who may want to download the OMNI data using this script but not want a netCDF file to be generated. Setting this keyword to ```True``` and ```cleanUp``` to False will allow users to do this.
+
 
 ### OMNI documentation:
 
