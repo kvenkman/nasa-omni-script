@@ -35,13 +35,14 @@ The ```writeOutput``` keyword was added for users who may want to download the O
 
 ### OMNI documentation:
 
+#### Low resolution data
 " 	The /data/omni/low_res_omni/ directory contains the hourly mean values of
 	the interplanetary magnetic  field (IMF) and solar wind plasma parameters
 	measured by various spacecraft near  the  Earth's  orbit,  as  well  as  
 	geomagnetic and solar activity indices, and energetic proton fluxes
 	known as OMNI2 data. "
 
-
+#### High resolution data
  "  This directory (ftp://spdf.gsfc.nasa.gov/pub/data/omni/high_res_omni/) provides access to high resolution OMNI (HRO)
 	data at 1-min and 5-min resolution and to related 1-min
 	resolution spacecraft-specific data sets.  The latter consist of
