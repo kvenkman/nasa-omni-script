@@ -30,7 +30,7 @@ will produce a file named ```'OMNI_1963_<currentYear>_low_resolution.nc'``` cont
 
 The ```cleanUp``` keyword may be set to ```False``` if the user wishes to retain the raw data files downloaded by the script. These will be stored in the ```./~tmp``` folder.
 
-The ```writeOutput``` keyword was added for users who may want to download the OMNI data using this script but not want a netCDF file to be generated. Setting this keyword to ```True``` and ```cleanUp``` to False will allow users to do this.
+The ```writeOutput``` keyword was added for users who may want to download the OMNI data using this script but not want a netCDF file to be generated. Setting both ```writeOutput``` and ```cleanUp``` to ```False``` will allow users to do this.
 
 
 ### OMNI documentation:
