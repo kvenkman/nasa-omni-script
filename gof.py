@@ -60,7 +60,8 @@ def generateOmniFile(startYear=1963, endYear=datetime.datetime.now().year, resol
 
     # Setting output filename
     if(outputFile == 'defaultOutput'):
-        outputFile = 'OMNI_'+str(startYear)+"_"+str(endYear)+"_"+resolution+hroRes+'_resolution.nc'
+        modified = "m" if (modFlag == True) else ""
+        outputFile = 'OMNI_'+str(startYear)+"_"+str(endYear)+modified+"_"+resolution+hroRes+'_resolution.nc'
 
     # Download all the needed files
     print("Downloading requested data .. \n")
@@ -90,7 +91,7 @@ def generateOmniFile(startYear=1963, endYear=datetime.datetime.now().year, resol
         os.chdir('..')
         os.system('mv ~tmp/'+outputFile+' .')
 
-    print("Time elapsed: {}".format(time.time()-start_time))
+    print("Time elapsed: {} seconds".format(time.time()-start_time))
     # Clean up
     if(cleanUp):
         print("Cleaning up")
@@ -118,8 +119,7 @@ def lowResOMNI(outputFile):
     # The only dimension here will be time, and it will be unlimited in length
     time = fileid.createDimension('time', None)
 
-    # fileid.createVariable('name', format, (dimensions))
-    #altitudes = fileid.createVariable('altitude', np.float32, ('index',))
+    # Creating the needed variables
     year = fileid.createVariable('year', "u4", ('time', ))
     year.description = "Year"
     year.units = "1963, 1964, etc."
@@ -351,8 +351,7 @@ def lowResOMNI(outputFile):
             lines = fhandle.readlines()
 
         for line in lines:
-            lineFields = line.split()
-            all_lines = np.vstack([all_lines, lineFields])
+            all_lines = np.vstack([all_lines, line.split()])
 
     year[:] = all_lines[1:, 0].astype(np.uintc)
     day[:] = all_lines[1:, 1].astype(np.uintc)
@@ -426,7 +425,103 @@ def lowResOMNI(outputFile):
 # Function to process low resolution OMNI data
 def lowResModOMNI(outputFile):
     print("Processing low resolution modified OMNI files .. \n")
-    fileid = Dataset(outputFile, 'w', format='NETCDF3_CLASSIC')
+
+    # Open a new netCDF file
+    fileid = Dataset(outputFile, 'w', format='NETCDF4')
+
+    # Create variable dimensions
+    # The only dimension here will be time, and it will be unlimited in length
+    time = fileid.createDimension('time', None)
+
+    # Creating the needed variables
+    year = fileid.createVariable('year', "u4", ('time', ))
+    year.description = "Year"
+    year.units = "1963, 1964, etc."
+
+    day = fileid.createVariable('day', 'u4', ('time', ))
+    day.description = "Decimal Day"
+    day.units = "0, 1,...,23"
+
+    hour = fileid.createVariable('hour', 'u4', ('time', ))
+    hour.description = "Hour"
+    hour.units = "0, 1, 2, .. 23"
+
+    helio_ilat = fileid.createVariable('helio_ilat', 'f8',('time', ))
+    helio_ilat.description = "Heliographic Inertial Latitude of the Earth"
+    helio_ilat.units = "Degrees"
+
+    helio_ilon = fileid.createVariable('helio_ilon', 'f8',('time', ))
+    helio_ilon.description = "Heliographic Inertial Longitude of the Earth"
+    helio_ilon.units = "Degrees"
+
+    br_rtn = fileid.createVariable('br_rtn', 'f8',('time', ))
+    br_rtn.description = "BR RTN"
+    br_rtn.units = "nT"
+
+    bt_rtn = fileid.createVariable('bt_rtn', 'f8',('time', ))
+    bt_rtn.description = "BT RTN"
+    bt_rtn.units = "nT"
+
+    bn_rtn = fileid.createVariable('bn_rtn', 'f8',('time', ))
+    bn_rtn.description = "BN RTN"
+    bn_rtn.units = "nT"
+
+    b_avg =  fileid.createVariable('b_avg', 'f8',('time', ))
+    b_avg.description = "Field Magnitude Average |B|"
+    b_avg.units = "nT"
+
+    flow_speed = fileid.createVariable('flow_speed', 'f8',('time', ))
+    flow_speed.description = "Bulk Flow speed"
+    flow_speed.units = "km/s"
+
+    theta = fileid.createVariable('theta', 'f8',('time', ))
+    theta.description = "THETA - elevation angle  of the velocity vector (RTN)"
+    theta.units = "Degrees"
+
+    phi = fileid.createVariable('phi', 'f8',('time', ))
+    phi.description = "PHI- azimuth angle of the velocity vector (RTN)"
+    phi.units = "Degrees"
+
+    ion_den = fileid.createVariable('ion_den', 'f8',('time', ))
+    ion_den.description = " ION Density "
+    ion_den.units = "N/cm^3"
+
+    temperature = fileid.createVariable('temperature', 'f8',('time', ))
+    temperature.description = "Temperature"
+    temperature.units = "Degrees K"
+
+    # To parse all .dat files available in ~tmp
+    files = glob.glob('*.dat')
+
+    # Initialize a dummy variable to append rows to
+    all_lines = np.zeros((1, 14))
+
+    for file in files:
+        with open(file, 'r') as fhandle:
+            lines = fhandle.readlines()
+
+        for line in lines:
+            all_lines = np.vstack([all_lines, line.split()])
+
+    year[:] = all_lines[1:, 0].astype(np.uintc)
+    day[:] = all_lines[1:, 1].astype(np.uintc)
+    hour[:] = all_lines[1:, 2].astype(np.uintc)
+    helio_ilat[:] = all_lines[1:, 3].astype(np.double)
+    helio_ilon[:] = all_lines[1:, 4].astype(np.double)
+
+    br_rtn[:] = all_lines[1:, 5].astype(np.double)
+    bt_rtn[:] = all_lines[1:, 6].astype(np.double)
+    bn_rtn[:] = all_lines[1:, 7].astype(np.double)
+    b_avg[:] = all_lines[1:, 8].astype(np.double)
+    flow_speed[:] = all_lines[1:, 9].astype(np.double)
+
+    theta[:] = all_lines[1:, 10].astype(np.double)
+    phi[:] = all_lines[1:, 11].astype(np.double)
+    ion_den[:] = all_lines[1:, 12].astype(np.double)
+    temperature[:] = all_lines[1:, 13].astype(np.double)
+
+    fileid.close()
+
 
 def highResOMNI(outputFile):
     print("Processing high resolution OMNI files .. \n")
