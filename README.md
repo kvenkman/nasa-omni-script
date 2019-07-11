@@ -33,7 +33,7 @@ The ```cleanUp``` keyword may be set to ```False``` if the user wishes to retain
 The ```writeOutput``` keyword was added for users who may want to download the OMNI data using this script but not want a netCDF file to be generated. Setting both ```writeOutput``` and ```cleanUp``` to ```False``` will allow users to do this.
 
 
-### OMNI documentation:
+### A blurb from the OMNI documentation:
 
 #### Low resolution data
 " 	The /data/omni/low_res_omni/ directory contains the hourly mean values of the interplanetary magnetic  field (IMF) and solar wind plasma parameters measured by various spacecraft near the Earth's orbit, as well as geomagnetic and solar activity indices, and energetic proton fluxes known as OMNI2 data. "
