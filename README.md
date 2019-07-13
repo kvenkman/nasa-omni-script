@@ -14,7 +14,7 @@ This code depends on the `wget` and `netCDF4` python libraries to work properly.
 > import gof
 > gof.generateOmniFile(startYear = 1995, endYear = 2005, resolution = "high", outputFile= "myOutputFile.nc")
 ```
-The above call will generate a netCDF file named ```myOutputFile.nc``` containing high resolution (5 minute) OMNI data between years 1995 and 2005.
+The above call will generate a netCDF file named ```myOutputFile.nc``` containing high resolution (5 minute) OMNI data between years 1995 and 2005. Setting ```startYear``` and ```endYear``` to the same value will download a year's worth of data.
 
 ### Default parameters:
 The function definition provides default values that are used when the function is called with one or more parameters missing:
