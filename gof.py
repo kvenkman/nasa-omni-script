@@ -7,8 +7,11 @@ import glob
 import time
 
 # Main function
-def generateOmniFile(startYear=1963, endYear=datetime.datetime.now().year, resolution='low', hroRes = '5', modFlag=False, outputFile='defaultOutput', writeOutput=True, cleanUp=True):
+def generateOmniFile(startYear=1963, endYear=datetime.datetime.now().year, resolution='low', hroRes = 5, modFlag=False, outputFile='defaultOutput', writeOutput=True, cleanUp=True):
     # Sanitizing the inputs a bit
+    resolution = resolution.lower()
+    hroRes = str(hroRes)
+
     if(startYear>endYear):
         startYear, endYear = endYear, startYear
         print("Setting startYear, endYear to {}, {}".format(startYear, endYear))
@@ -38,13 +41,13 @@ def generateOmniFile(startYear=1963, endYear=datetime.datetime.now().year, resol
         omniDataPath = 'pub/data/omni/low_res_omni/'
         filePrefix = 'omni2_' if(modFlag == False) else 'omni_m'
         fileSuffix = '.dat'
-        hroRes = ''
+        hroResSuffix = ''
 
     if(resolution == 'high'):
         omniDataPath = 'pub/data/omni/high_res_omni/'
         filePrefix = 'omni_5min' if(hroRes == '5') else 'omni_min'
         fileSuffix = '.asc'
-        hroRes = '_5min' if(hroRes == '5') else '_1min'
+        hroResSuffix = '_5min' if(hroRes == '5') else '_1min'
 
     # Because when the code breaks, it does not return to the root directory
     os.chdir(os.path.dirname(os.path.abspath(__file__)))
@@ -53,22 +56,27 @@ def generateOmniFile(startYear=1963, endYear=datetime.datetime.now().year, resol
     if(not os.path.isdir('~tmp')):
         os.system('mkdir ~tmp')
 
-    os.chdir('~tmp')
-    oldFiles = glob.glob('*.dat')
-    if(len(oldFiles) != 0):
-        os.system('rm *.dat') # Wipe clean in case there are previously existing files there
-
     # Setting output filename
     if(outputFile == 'defaultOutput'):
         modified = "m" if (modFlag == True) else ""
-        outputFile = 'OMNI_'+str(startYear)+"_"+str(endYear)+modified+"_"+resolution+hroRes+'_resolution.nc'
+        outputFile = 'OMNI_'+str(startYear)+"_"+str(endYear)+modified+"_"+resolution+hroResSuffix+'_resolution.nc'
+
+    os.chdir('~tmp')
+
+    oldFiles = glob.glob('*.dat') + glob.glob('*.asc')
+    if(len(oldFiles) != 0):
+        os.system('rm *.dat *.asc') # Wipe clean in case there are previously existing files there
 
     # Download all the needed files
     print("Downloading requested data .. \n")
     for i in range(startYear, endYear+1):
         tmpFilename = filePrefix+str(i)+fileSuffix
         print("\nGetting file {}\n".format(tmpFilename))
-        file = wget.download(serverAddress+omniDataPath+tmpFilename, out=tmpFilename)
+        if(resolution=='low'):
+            file = wget.download(serverAddress+omniDataPath+tmpFilename, out=str(i)+'.dat')
+        else:
+            file = wget.download(serverAddress+omniDataPath+tmpFilename, out=str(i)+'.asc')
+
     print("\nDownload complete")
 
     start_time = time.time()
@@ -78,12 +86,11 @@ def generateOmniFile(startYear=1963, endYear=datetime.datetime.now().year, resol
 
         if(resolution == 'low'):
             if(modFlag == True):
-                file_description = ""
                 lowResModOMNI(outputFile)
             else:
                 lowResOMNI(outputFile)
         else:
-            highResOMNI(outputFile)
+            highResOMNI(outputFile, hroRes)
 
 
         print("Processing complete")
@@ -341,83 +348,89 @@ def lowResOMNI(outputFile):
     ms_mach.units = ""
 
     # To parse all .dat files available in ~tmp
-    files = glob.glob('*.dat')
+    files = sorted(glob.glob('*.dat'))
 
-    # Initialize a dummy variable to append rows to
-    all_lines = np.zeros((1, 55))
+    # Initialize counter
+    count = 0
 
     for file in files:
         with open(file, 'r') as fhandle:
             lines = fhandle.readlines()
 
+        if(count == 0):
+            all_lines = np.zeros((len(lines), 55))
+        else:
+            all_lines = np.vstack([all_lines, np.zeros((len(lines), 55))])
+
         for line in lines:
-            all_lines = np.vstack([all_lines, line.split()])
+            all_lines[count, :] = line.split()
+            count += 1
 
-    year[:] = all_lines[1:, 0].astype(np.uintc)
-    day[:] = all_lines[1:, 1].astype(np.uintc)
-    hour[:] = all_lines[1:, 2].astype(np.uintc)
-    brn[:] = all_lines[1:, 3].astype(np.uint)
-    imf_sc_id[:] = all_lines[1:, 4].astype(np.uintc)
+    year[:] = all_lines[:, 0].astype(np.uintc)
+    day[:] = all_lines[:, 1].astype(np.uintc)
+    hour[:] = all_lines[:, 2].astype(np.uintc)
+    brn[:] = all_lines[:, 3].astype(np.uint)
+    imf_sc_id[:] = all_lines[:, 4].astype(np.uintc)
 
-    swplasma_sc_id[:] = all_lines[1:, 5].astype(np.uintc)
-    npts_imf_avg[:] = all_lines[1:, 6].astype(np.uint)
-    npts_plasma_avg[:] = all_lines[1:, 7].astype(np.uintc)
-    avg_B[:] = all_lines[1:, 8].astype(np.double)
-    avg_B_vec[:] = all_lines[1:, 9].astype(np.double)
+    swplasma_sc_id[:] = all_lines[:, 5].astype(np.uintc)
+    npts_imf_avg[:] = all_lines[:, 6].astype(np.uint)
+    npts_plasma_avg[:] = all_lines[:, 7].astype(np.uintc)
+    avg_B[:] = all_lines[:, 8].astype(np.double)
+    avg_B_vec[:] = all_lines[:, 9].astype(np.double)
 
-    lat_avg_B_vec[:] = all_lines[1:, 10].astype(np.double)
-    lon_avg_B_vec[:] = all_lines[1:, 11].astype(np.double)
-    bx[:] = all_lines[1:, 12].astype(np.double)
-    by_gse[:] = all_lines[1:, 13].astype(np.double)
-    bz_gse[:] = all_lines[1:, 14].astype(np.double)
+    lat_avg_B_vec[:] = all_lines[:, 10].astype(np.double)
+    lon_avg_B_vec[:] = all_lines[:, 11].astype(np.double)
+    bx[:] = all_lines[:, 12].astype(np.double)
+    by_gse[:] = all_lines[:, 13].astype(np.double)
+    bz_gse[:] = all_lines[:, 14].astype(np.double)
 
-    by_gsm[:] = all_lines[1:, 15].astype(np.double)
-    bz_gsm[:] = all_lines[1:, 16].astype(np.double)
-    sigma_mag_b[:] = all_lines[1:, 17].astype(np.double)
-    sigma_b[:] = all_lines[1:, 18].astype(np.double)
-    sigma_bx[:] = all_lines[1:, 19].astype(np.double)
+    by_gsm[:] = all_lines[:, 15].astype(np.double)
+    bz_gsm[:] = all_lines[:, 16].astype(np.double)
+    sigma_mag_b[:] = all_lines[:, 17].astype(np.double)
+    sigma_b[:] = all_lines[:, 18].astype(np.double)
+    sigma_bx[:] = all_lines[:, 19].astype(np.double)
 
-    sigma_by[:] = all_lines[1:, 20].astype(np.double)
-    sigma_bz[:] = all_lines[1:, 21].astype(np.double)
-    proton_temp[:] = all_lines[1:, 22].astype(np.double)
-    proton_den[:] = all_lines[1:, 23].astype(np.double)
-    plasma_speed[:] = all_lines[1:, 24].astype(np.double)
+    sigma_by[:] = all_lines[:, 20].astype(np.double)
+    sigma_bz[:] = all_lines[:, 21].astype(np.double)
+    proton_temp[:] = all_lines[:, 22].astype(np.double)
+    proton_den[:] = all_lines[:, 23].astype(np.double)
+    plasma_speed[:] = all_lines[:, 24].astype(np.double)
 
-    flow_lon_angle[:] = all_lines[1:, 25].astype(np.double)
-    flow_lat_angle[:] = all_lines[1:, 26].astype(np.double)
-    ap_ratio[:] = all_lines[1:, 27].astype(np.double)
-    flow_prsr[:] = all_lines[1:, 28].astype(np.double)
-    sigma_t[:] = all_lines[1:, 29].astype(np.double)
+    flow_lon_angle[:] = all_lines[:, 25].astype(np.double)
+    flow_lat_angle[:] = all_lines[:, 26].astype(np.double)
+    ap_ratio[:] = all_lines[:, 27].astype(np.double)
+    flow_prsr[:] = all_lines[:, 28].astype(np.double)
+    sigma_t[:] = all_lines[:, 29].astype(np.double)
 
-    sigma_n[:] = all_lines[1:, 30].astype(np.double)
-    sigma_v[:] = all_lines[1:, 31].astype(np.double)
-    sigma_phi_v[:] = all_lines[1:, 32].astype(np.double)
-    sigma_theta_v[:] = all_lines[1:, 33].astype(np.double)
-    sigma_ap[:] = all_lines[1:, 34].astype(np.double)
+    sigma_n[:] = all_lines[:, 30].astype(np.double)
+    sigma_v[:] = all_lines[:, 31].astype(np.double)
+    sigma_phi_v[:] = all_lines[:, 32].astype(np.double)
+    sigma_theta_v[:] = all_lines[:, 33].astype(np.double)
+    sigma_ap[:] = all_lines[:, 34].astype(np.double)
 
-    efield[:] = all_lines[1:, 35].astype(np.double)
-    plasma_beta[:] = all_lines[1:, 36].astype(np.double)
-    alfven_mach[:] = all_lines[1:, 37].astype(np.double)
-    kp[:] = all_lines[1:, 38].astype(np.uintc)
-    ssn[:] = all_lines[1:, 39].astype(np.uintc)
+    efield[:] = all_lines[:, 35].astype(np.double)
+    plasma_beta[:] = all_lines[:, 36].astype(np.double)
+    alfven_mach[:] = all_lines[:, 37].astype(np.double)
+    kp[:] = all_lines[:, 38].astype(np.uintc)
+    ssn[:] = all_lines[:, 39].astype(np.uintc)
 
-    dst[:] = all_lines[1:, 40].astype(np.uint)
-    ae[:] = all_lines[1:, 41].astype(np.uint)
-    pflux1[:] = all_lines[1:, 42].astype(np.double)
-    pflux2[:] = all_lines[1:, 43].astype(np.double)
-    pflux3[:] = all_lines[1:, 44].astype(np.double)
+    dst[:] = all_lines[:, 40].astype(np.uint)
+    ae[:] = all_lines[:, 41].astype(np.uint)
+    pflux1[:] = all_lines[:, 42].astype(np.double)
+    pflux2[:] = all_lines[:, 43].astype(np.double)
+    pflux3[:] = all_lines[:, 44].astype(np.double)
 
-    pflux4[:] = all_lines[1:, 45].astype(np.double)
-    pflux5[:] = all_lines[1:, 46].astype(np.double)
-    pflux6[:] = all_lines[1:, 47].astype(np.double)
-    flag[:] = all_lines[1:, 48].astype(np.uintc)
-    ap[:] = all_lines[1:, 49].astype(np.uintc)
+    pflux4[:] = all_lines[:, 45].astype(np.double)
+    pflux5[:] = all_lines[:, 46].astype(np.double)
+    pflux6[:] = all_lines[:, 47].astype(np.double)
+    flag[:] = all_lines[:, 48].astype(np.uintc)
+    ap[:] = all_lines[:, 49].astype(np.uintc)
 
-    f107[:] = all_lines[1:, 50].astype(np.float32)
-    pcn_index[:] = all_lines[1:, 51].astype(np.double)
-    al_index[:] = all_lines[1:, 52].astype(np.uint)
-    au_index[:] = all_lines[1:, 53].astype(np.uint)
-    ms_mach[:] = all_lines[1:, 54].astype(np.double)
+    f107[:] = all_lines[:, 50].astype(np.float32)
+    pcn_index[:] = all_lines[:, 51].astype(np.double)
+    al_index[:] = all_lines[:, 52].astype(np.uint)
+    au_index[:] = all_lines[:, 53].astype(np.uint)
+    ms_mach[:] = all_lines[:, 54].astype(np.double)
 
     fileid.close()
 
@@ -491,38 +504,344 @@ def lowResModOMNI(outputFile):
     temperature.units = "Degrees K"
 
     # To parse all .dat files available in ~tmp
-    files = glob.glob('*.dat')
+    files = sorted(glob.glob('*.dat'))
 
-    # Initialize a dummy variable to append rows to
-    all_lines = np.zeros((1, 14))
+    # Initialize counter
+    count = 0
 
     for file in files:
         with open(file, 'r') as fhandle:
             lines = fhandle.readlines()
 
+        if(count == 0):
+            all_lines = np.zeros((len(lines), 14))
+        else:
+            all_lines = np.vstack([all_lines, np.zeros((len(lines), 14))])
+
         for line in lines:
-            all_lines = np.vstack([all_lines, line.split()])
+            all_lines[count, :] = line.split()
+            count += 1
 
-    year[:] = all_lines[1:, 0].astype(np.uintc)
-    day[:] = all_lines[1:, 1].astype(np.uintc)
-    hour[:] = all_lines[1:, 2].astype(np.uintc)
-    helio_ilat[:] = all_lines[1:, 3].astype(np.double)
-    helio_ilon[:] = all_lines[1:, 4].astype(np.double)
+    year[:] = all_lines[:, 0].astype(np.uintc)
+    day[:] = all_lines[:, 1].astype(np.uintc)
+    hour[:] = all_lines[:, 2].astype(np.uintc)
+    helio_ilat[:] = all_lines[:, 3].astype(np.double)
+    helio_ilon[:] = all_lines[:, 4].astype(np.double)
 
-    br_rtn[:] = all_lines[1:, 5].astype(np.double)
-    bt_rtn[:] = all_lines[1:, 6].astype(np.double)
-    bn_rtn[:] = all_lines[1:, 7].astype(np.double)
-    b_avg[:] = all_lines[1:, 8].astype(np.double)
-    flow_speed[:] = all_lines[1:, 9].astype(np.double)
+    br_rtn[:] = all_lines[:, 5].astype(np.double)
+    bt_rtn[:] = all_lines[:, 6].astype(np.double)
+    bn_rtn[:] = all_lines[:, 7].astype(np.double)
+    b_avg[:] = all_lines[:, 8].astype(np.double)
+    flow_speed[:] = all_lines[:, 9].astype(np.double)
 
-    theta[:] = all_lines[1:, 10].astype(np.double)
-    phi[:] = all_lines[1:, 11].astype(np.double)
-    ion_den[:] = all_lines[1:, 12].astype(np.double)
-    temperature[:] = all_lines[1:, 13].astype(np.double)
+    theta[:] = all_lines[:, 10].astype(np.double)
+    phi[:] = all_lines[:, 11].astype(np.double)
+    ion_den[:] = all_lines[:, 12].astype(np.double)
+    temperature[:] = all_lines[:, 13].astype(np.double)
 
     fileid.close()
 
 
-def highResOMNI(outputFile):
+def highResOMNI(outputFile, hroRes):
     print("Processing high resolution OMNI files .. \n")
-    fileid = Dataset(outputFile, 'w', format='NETCDF3_CLASSIC')
+
+    # Open a new netCDF file
+    fileid = Dataset(outputFile, 'w', format='NETCDF4')
+
+    # Create variable dimensions
+    # The only dimension here will be time, and it will be unlimited in length
+    time = fileid.createDimension('time', None)
+
+    # Creating the needed variables
+    year = fileid.createVariable('year', "u4", ('time', ))
+    year.description = "Year"
+    year.units = "1963, 1964, etc."
+
+    day = fileid.createVariable('day', 'u4', ('time', ))
+    day.description = "Decimal Day"
+    day.units = "0, 1,...,23"
+
+    hour = fileid.createVariable('hour', 'u4', ('time', ))
+    hour.description = "Hour"
+    hour.units = "0, 1, 2, .. 23"
+
+    minute = fileid.createVariable('minute', 'u4', ('time', ))
+    minute.description = "Minute"
+    minute.units = "0, 1 ... 59"
+
+    imf_sc_id = fileid.createVariable('imf_sc_id', 'u4', ('time', ))
+    imf_sc_id.description = "ID for IMF spacecraft"
+    imf_sc_id.units = "ID for IMF spacecraft"
+
+    swplasma_sc_id = fileid.createVariable('swplasma_sc_id', 'u4', ('time', ))
+    swplasma_sc_id.description = "ID for SW plasma spacecraft"
+    swplasma_sc_id.units = "ID for SW Plasma spacecraft"
+
+    imf_avg_npts = fileid.createVariable('imf_avg_npts', 'u8', ('time', ))
+    imf_avg_npts.description = ""
+    imf_avg_npts.units = "\# of points in IMF averages	I4"
+
+    plasma_avg_npts = fileid.createVariable('plasma_avg_npts', 'u8', ('time', ))
+    plasma_avg_npts.description = "\# of points in Plasma averages"
+    plasma_avg_npts.units = ""
+
+    percent_interp = fileid.createVariable('percent_interp', 'u4', ('time', ))
+    percent_interp.description = "The percent (0-100) of the points contributing to\
+    the 1-min magnetic field averages whose phase front normal (PFN)\
+    was interpolated because neither the MVAB-0 nor Cross Product\
+    shift techniques yielded a PFN that satisfied its respective tests\
+    (see detailed documentation for these)."
+    percent_interp.units = ""
+
+    tshift = fileid.createVariable('tshift', 'f8', ('time', ))
+    tshift.description = "Timeshift"
+    tshift.units = "sec"
+
+    rms_tshift = fileid.createVariable('rms_tshift', 'f8', ('time', ))
+    rms_tshift.description = "RMS, Timeshift"
+    rms_tshift.units = ""
+
+    rms_pfront = fileid.createVariable('rms_pfront', 'f8', ('time', ))
+    rms_pfront.description = "RMS, Phase front normal"
+    rms_pfront.units = ""
+
+    delta_t = fileid.createVariable('delta_t', 'f8', ('time', ))
+    delta_t.description = ""
+    delta_t.units = ""
+
+    avg_B = fileid.createVariable('avg_B', 'f8', ('time', ))
+    avg_B.description = "Field Magnitude Average |B|  1/N SUM |B|"
+    avg_B.units = "nT"
+
+    bx = fileid.createVariable('bx', 'f8', ('time', ))
+    bx.description = "Bx GSE, GSM"
+    bx.units = "nT"
+
+    by_gse = fileid.createVariable('by_gse', 'f8', ('time', ))
+    by_gse.description = "By GSE"
+    by_gse.units = "nT"
+
+    bz_gse = fileid.createVariable('bz_gse', 'f8', ('time', ))
+    bz_gse.description = "Bz GSE"
+    bz_gse.units = "nT"
+
+    by_gsm = fileid.createVariable('by_gsm', 'f8',('time', ))
+    by_gsm.description = "By GSM"
+    by_gsm.units = "nT"
+
+    bz_gsm = fileid.createVariable('bz_gsm', 'f8',('time', ))
+    bz_gsm.description = "Bz GSM"
+    bz_gsm.units = "nT"
+
+    rms_sd_b = fileid.createVariable('rms_sd_b', 'f8', ('time', ))
+    rms_sd_b.description = "RMS SD B scalar"
+    rms_sd_b.units = "nT"
+
+    rms_sd_bvector = fileid.createVariable('rms_sd_bvector', 'f8', ('time', ))
+    rms_sd_bvector.description = "RMS SD field vector"
+    rms_sd_bvector.units = "nT"
+
+    flow_speed = fileid.createVariable('flow_speed', 'f8',('time', ))
+    flow_speed.description = "Bulk Flow speed"
+    flow_speed.units = "km/s"
+
+    vx = fileid.createVariable('vx', 'f8', ('time', ))
+    vx.description = "Vx GSE"
+    vx.units = "km/s"
+
+    vy = fileid.createVariable('vy', 'f8', ('time', ))
+    vy.description = "Vy GSE"
+    vy.units = "km/s"
+
+    vz = fileid.createVariable('vz', 'f8', ('time', ))
+    vz.description = "Vz GSE"
+    vz.units = "km/s"
+
+    proton_den = fileid.createVariable('proton_den', 'f8',('time', ))
+    proton_den.description = "Proton density"
+    proton_den.units = "N/cm^3"
+
+    temperature = fileid.createVariable('temperature', 'f8',('time', ))
+    temperature.description = "Temperature"
+    temperature.units = "Degrees K"
+
+    flow_prsr = fileid.createVariable('flow_prsr', 'f8',('time', ))
+    flow_prsr.description = "Flow Pressure P (nPa) = (1.67/10**6) * Np*V**2 * (1+ 4*Na/Np) \n for hours with non-fill Na/Np ratios and \n P (nPa) = (2.0/10**6) * Np*V**2 \n for hours with fill values for Na/Np"
+    flow_prsr.units = "nPa"
+
+    efield = fileid.createVariable('efield', 'f8',('time', ))
+    efield.description = "Electric field -[V(km/s) * Bz (nT; GSM)] * 10**-3"
+    efield.units = "(mV/m)"
+
+    plasma_beta = fileid.createVariable('plasma_beta', 'f8',('time', ))
+    plasma_beta.description = "Plasma beta Beta = [(T*4.16/10**5) + 5.34] * Np / B**2"
+    plasma_beta.units = ""
+
+    alfven_mach = fileid.createVariable('alfven_mach', 'f8',('time', ))
+    alfven_mach.description = "Alfven mach number      Ma = (V * Np**0.5) / 20 * B"
+    alfven_mach.units = ""
+
+    scx = fileid.createVariable('scx', 'f8', ('time', ))
+    scx.description = "X(s/c) GSE"
+    scx.units = "Re"
+
+    scy = fileid.createVariable('scy', 'f8', ('time', ))
+    scy.description = "Y(s/c) GSE"
+    scy.units = "Re"
+
+    scz = fileid.createVariable('scz', 'f8', ('time', ))
+    scz.description = "Z(s/c) GSE"
+    scz.units = "Re"
+
+    bsn_loc_xgse = fileid.createVariable('bsn_loc_xgse','f8' , ('time', ))
+    bsn_loc_xgse .description = "Bow shock nose (BSN) location X GSE"
+    bsn_loc_xgse .units = "Re"
+
+    bsn_loc_ygse = fileid.createVariable('bsn_loc_ygse', 'f8', ('time', ))
+    bsn_loc_ygse.description = "Bow shock nose (BSN) location Y GSE"
+    bsn_loc_ygse.units = "Re"
+
+    bsn_loc_zgse = fileid.createVariable('bsn_loc_zgse','f8' , ('time', ))
+    bsn_loc_zgse.description = "Bow shock nose (BSN) location Z GSE"
+    bsn_loc_zgse.units = "Re"
+
+    ae = fileid.createVariable('ae', 'u8', ('time', ))
+    ae.description = "AE-index from Kyoto"
+    ae.units = " nT "
+
+    al_index = fileid.createVariable('al_index', 'u8', ('time', ))
+    al_index.description = "AL-index, from Kyoto"
+    al_index.units = "nT"
+
+    au_index = fileid.createVariable('au_index', 'u8', ('time', ))
+    au_index.description = "AL-index, from Kyoto"
+    au_index.units = "nT"
+
+    sym_d = fileid.createVariable('sym_d', 'u8', ('time', ))
+    sym_d.description = "longitudinally  symmetric  (ASY) disturbance  index"
+    sym_d.units = ""
+
+    sym_h = fileid.createVariable('sym_h', 'u8', ('time', ))
+    sym_h.description = ""
+    sym_h.units = "longitudinally  symmetric  (ASY)  disturbance  index horizontal direction"
+
+    asy_d = fileid.createVariable('asy_d', 'u8', ('time', ))
+    asy_d.description = "longitudinally  asymmetric  (ASY)  disturbance  index "
+    asy_d.units = ""
+
+    asy_h = fileid.createVariable('asy_h','u8' , ('time', ))
+    asy_h.description = "longitudinally  asymmetric  (ASY)  disturbance  index horizontal direction"
+    asy_h.units = ""
+
+    pcn_index = fileid.createVariable('pcn_index', 'f8', ('time', ))
+    pcn_index.description = "PC(N) index"
+    pcn_index.units = ""
+
+    ms_mach = fileid.createVariable('ms_mach', 'f8', ('time', ))
+    ms_mach.description = "Magnetosonic mach number= = V/Magnetosonic_speed Magnetosonic speed = [(sound speed)**2 + (Alfv speed)**2]**0.5 The Alfven speed = 20. * B / N**0.5 The sound speed = 0.12 * [T + 1.28*10**5]**0.5"
+    ms_mach.units = ""
+
+
+    if(hroRes == '1'):
+        all_lines = np.zeros((1, 46))
+    else:
+        all_lines = np.zeros((1, 49))
+        pflux1 = fileid.createVariable('pflux1', 'f8',('time', ))
+        pflux1.description = "Proton flux"
+        pflux1.units = "number/cmsq sec sr >10 Mev "
+
+        pflux2 = fileid.createVariable('pflux2', 'f8',('time', ))
+        pflux2.description = "Proton flux"
+        pflux2.units = "number/cmsq sec sr >30 Mev "
+
+        pflux3 = fileid.createVariable('pflux3', 'f8',('time', ))
+        pflux3.description = "Proton flux"
+        pflux3.units = "number/cmsq sec sr >60 Mev "
+
+    # To parse all .dat files available in ~tmp
+    files = sorted(glob.glob('*.asc'))
+
+    # Initialize counter
+    count = 0
+
+    for file in files:
+        with open(file, 'r') as fhandle:
+            lines = fhandle.readlines()
+
+        if(count == 0):
+            if(hroRes == '1'):
+                all_lines = np.zeros((len(lines), 46))
+            else:
+                all_lines = np.zeros((len(lines), 49))
+        else:
+            if(hroRes == '1'):
+                all_lines = np.vstack([all_lines, np.zeros((len(lines), 46))])
+            else:
+                all_lines = np.vstack([all_lines, np.zeros((len(lines), 49))])
+
+        for line in lines:
+            all_lines[count, :] = line.split()
+            count += 1
+
+    year[:] = all_lines[:, 0].astype(np.uintc)
+    day[:] = all_lines[:, 1].astype(np.uintc)
+    hour[:] = all_lines[:, 2].astype(np.uintc)
+    minute[:] = all_lines[:, 3].astype(np.uintc)
+    imf_sc_id[:] = all_lines[:, 4].astype(np.uintc)
+
+    swplasma_sc_id[:] = all_lines[:, 5].astype(np.uintc)
+    imf_avg_npts[:] = all_lines[:, 6].astype(np.uintc)
+    plasma_avg_npts[:] = all_lines[:, 7].astype(np.uintc)
+    percent_interp[:] = all_lines[:, 8].astype(np.uintc)
+    tshift[:] = all_lines[:, 9].astype(np.uintc)
+
+    rms_tshift[:] = all_lines[:, 10].astype(np.double)
+    rms_pfront[:] = all_lines[:, 11].astype(np.double)
+    delta_t[:] = all_lines[:, 12].astype(np.double)
+    avg_B[:] = all_lines[:, 13].astype(np.double)
+    bx[:] = all_lines[:, 14].astype(np.double)
+
+    by_gse[:] = all_lines[:, 15].astype(np.double)
+    bz_gse[:] = all_lines[:, 16].astype(np.double)
+    by_gsm[:] = all_lines[:, 17].astype(np.double)
+    bz_gsm[:] = all_lines[:, 18].astype(np.double)
+    rms_sd_b[:] = all_lines[:, 19].astype(np.double)
+
+    rms_sd_bvector[:] = all_lines[:, 20].astype(np.double)
+    flow_speed[:] = all_lines[:, 21].astype(np.double)
+    vx[:] = all_lines[:, 22].astype(np.double)
+    vy[:] = all_lines[:, 23].astype(np.double)
+    vz[:] = all_lines[:, 24].astype(np.double)
+
+    proton_den[:] = all_lines[:, 25].astype(np.double)
+    temperature[:] = all_lines[:, 26].astype(np.double)
+    flow_prsr[:] = all_lines[:, 27].astype(np.double)
+    efield[:] = all_lines[:, 28].astype(np.double)
+    plasma_beta[:] = all_lines[:, 29].astype(np.double)
+
+    alfven_mach[:] = all_lines[:, 30].astype(np.double)
+    scx[:] = all_lines[:, 31].astype(np.double)
+    scy[:] = all_lines[:, 32].astype(np.double)
+    scz[:] = all_lines[:, 33].astype(np.double)
+    bsn_loc_xgse[:] = all_lines[:, 34].astype(np.double)
+
+    bsn_loc_ygse[:] = all_lines[:, 35].astype(np.double)
+    bsn_loc_zgse[:] = all_lines[:, 36].astype(np.double)
+    ae[:] = all_lines[:, 37].astype(np.uint)
+    al_index[:] = all_lines[:, 38].astype(np.uint)
+    au_index[:] = all_lines[:, 39].astype(np.uint)
+
+    sym_d[:] = all_lines[:, 40].astype(np.uint)
+    sym_h[:] = all_lines[:, 41].astype(np.uint)
+    asy_d[:] = all_lines[:, 42].astype(np.uint)
+    asy_h[:] = all_lines[:, 43].astype(np.uint)
+    pcn_index[:] = all_lines[:, 44].astype(np.double)
+
+    ms_mach[:] = all_lines[:, 45].astype(np.double)
+
+    if(hroRes == '5'):
+        pflux1[:] = all_lines[:, 46].astype(np.double)
+        pflux2[:] = all_lines[:, 47].astype(np.double)
+        pflux3[:] = all_lines[:, 48].astype(np.double)
+
+    fileid.close()
