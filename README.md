@@ -2,7 +2,7 @@ The python scripts provided here downloads OMNI data from the NASA ftp website (
 
 ### Dependencies:
 
-This code depends on the `numpy` and `netCDF4` python libraries to work properly. Pip install the latter two from the terminal if missing:
+This code depends on the `numpy` and `netCDF4` python libraries to work properly. Pip install `netCDF4` from the terminal if missing:
 
 ```
 > pip install netCDF4
