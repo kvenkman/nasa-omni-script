@@ -2,13 +2,12 @@ The python scripts provided here downloads OMNI data from the NASA ftp website (
 
 ### Dependencies:
 
-This code depends on the `numpy`, `wget` and `netCDF4` python libraries to work properly. Pip install the latter two from the terminal if missing:
+This code depends on the `numpy` and `netCDF4` python libraries to work properly. Pip install the latter two from the terminal if missing:
 
 ```
-> pip install wget
 > pip install netCDF4
 ```
-`numpy` should either have shipped with your Linux distro, else may be best installed using a binary package. Refer to https://scipy.org/install.html
+`numpy` should either have shipped with your Python Anaconda install, else may be best installed using a binary package. Refer to https://scipy.org/install.html
 
 ### Function call:
 ```
