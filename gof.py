@@ -1,10 +1,9 @@
-import wget
-from netCDF4 import Dataset
-import datetime
+import datetime as datetime
 import os
 import numpy as np
 import glob
 import time
+from netCDF4 import Dataset
 
 # Main function
 def generateOmniFile(startYear=1963, endYear=datetime.datetime.now().year, resolution='low', hroRes = 5, modFlag=False, outputFile='defaultOutput', writeOutput=True, cleanUp=True):
@@ -73,9 +72,11 @@ def generateOmniFile(startYear=1963, endYear=datetime.datetime.now().year, resol
         tmpFilename = filePrefix+str(i)+fileSuffix
         print("\nGetting file {}\n".format(tmpFilename))
         if(resolution=='low'):
-            file = wget.download(serverAddress+omniDataPath+tmpFilename, out=str(i)+'.dat')
+            wget_command = "wget -q "+serverAddress+omniDataPath+tmpFilename+" -O="+str(i)+'.dat'
+            os.system(wget_command)
         else:
-            file = wget.download(serverAddress+omniDataPath+tmpFilename, out=str(i)+'.asc')
+            wget_command = "wget -q "+serverAddress+omniDataPath+tmpFilename+" -O="+str(i)+'.asc'
+            os.system(wget_command)
 
     print("\nDownload complete")
 
