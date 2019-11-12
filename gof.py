@@ -34,7 +34,7 @@ def generateOmniFile(startYear=1963, endYear=datetime.datetime.now().year, resol
         writeOutput = True
 
     # Done squaring away the inputs. Lets get started.
-    serverAddress='ftp://cdaweb.gsfc.nasa.gov/'
+    serverAddress='https://spdf.gsfc.nasa.gov/'
 
     if(resolution == 'low'):
         omniDataPath = 'pub/data/omni/low_res_omni/'
