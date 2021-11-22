@@ -72,10 +72,10 @@ def generateOmniFile(startYear=1963, endYear=datetime.datetime.now().year, resol
         tmpFilename = filePrefix+str(i)+fileSuffix
         print("\nGetting file {}\n".format(tmpFilename))
         if(resolution=='low'):
-            wget_command = "wget -q "+serverAddress+omniDataPath+tmpFilename+" -O="+str(i)+'.dat'
+            wget_command = "wget -q "+serverAddress+omniDataPath+tmpFilename+" -O "+str(i)+'.dat'
             os.system(wget_command)
         else:
-            wget_command = "wget -q "+serverAddress+omniDataPath+tmpFilename+" -O="+str(i)+'.asc'
+            wget_command = "wget -q "+serverAddress+omniDataPath+tmpFilename+" -O "+str(i)+'.asc'
             os.system(wget_command)
 
     print("\nDownload complete")
